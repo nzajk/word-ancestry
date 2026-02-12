@@ -1,6 +1,8 @@
-python -m nltk.downloader wordnet
-flask
+Flask
 flask-cors
 requests
 beautifulsoup4
 nltk
+Flask-Limiter
+Flask-Caching
+gunicorn
