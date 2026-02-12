@@ -4,33 +4,47 @@ import requests
 import re
 from bs4 import BeautifulSoup
 import nltk
-
-# download wordnet once (move to requirements at some point)
-nltk.download('wordnet')
-
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_caching import Cache
 
-TTL=86400 # in seconds
-RATE_LIMIT=10 # per minute
-TIMEOUT=10 # in seconds
+# constants
+CACHE_TTL = 86400               # 24h, used for @cache.cached timeout
+HTTP_TIMEOUT = 10               # seconds, used for requests.get timeout
+RATE_LIMIT_PER_MIN = 10         # requests per minute
+RATE_LIMIT_PER_DAY = 100        # requests per minute
+MAX_LEMMA_DEPTH = 3             # max recursion depth for lemmatization fallback
 
-# cors
+# app setup
 app = Flask(__name__)
+
+# TODO: restrict CORS to your actual frontend origin(s) in prod
 CORS(app, origins="*", supports_credentials=True)
 
-# handle rate limiting and browser caching
-limiter = Limiter(get_remote_address, app=app, default_limits=["100 per day", "10 per minute"])
-cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': TTL})
+# handle rate limiting
+limiter = Limiter(
+    get_remote_address, 
+    app=app, 
+    default_limits=[
+        f"{RATE_LIMIT_PER_DAY} per day", 
+        f"{RATE_LIMIT_PER_MIN} per minute"
+    ]
+)
+
+# cache common requests
+cache = Cache(app, config={
+    'CACHE_TYPE': 'SimpleCache', 
+    'CACHE_DEFAULT_TIMEOUT': CACHE_TTL
+})
 
 # used to reduce words to their root if needed
 lemmatizer = WordNetLemmatizer()
 
-# handle common comparatives and superlatives (needs to be more robust)
+
 def simple_pos(word):
+    """rough POS guess for lemmatization fallback."""
     if word.endswith("er") or word.endswith("est"):
         return wordnet.ADJ
     elif word.endswith("ing") or word.endswith("ed"):
@@ -38,7 +52,22 @@ def simple_pos(word):
     else:
         return wordnet.NOUN
 
-def scrape_etymology(word, base_word=None):
+
+def scrape_etymology(word, base_word=None, _depth=0):
+    """
+    scrape etymology for a word from etymonline.com.
+    falls back to lemmatized root if no result found, up to MAX_LEMMA_DEPTH.
+    """
+    # prevent potential infinite recursion case
+    if _depth > MAX_LEMMA_DEPTH:
+        app.logger.warning(f"Max lemma depth reached for word '{word}'")
+        return {
+            "word": base_word or word,
+            "root": word if base_word else None,
+            "word_type": None,
+            "first-attested-meaning": None
+        }
+    
     # initialize values for output
     original_word = word
     root = None
@@ -57,7 +86,7 @@ def scrape_etymology(word, base_word=None):
     url = f"https://www.etymonline.com/word/{word}"
     try:
         session = requests.Session()
-        response = session.get(url, headers=headers, timeout=TIMEOUT)
+        response = session.get(url, headers=headers, timeout=HTTP_TIMEOUT)
         response.raise_for_status()
     except requests.HTTPError:
         response = None
@@ -81,8 +110,9 @@ def scrape_etymology(word, base_word=None):
     if not etymology:
         pos = simple_pos(word)
         root = lemmatizer.lemmatize(word, pos=pos)
+
         if word != root:
-            return scrape_etymology(root, base_word=word)
+            return scrape_etymology(root, base_word=word, _depth=_depth + 1)
 
     output = {
         "word": original_word,
@@ -95,8 +125,8 @@ def scrape_etymology(word, base_word=None):
 
 
 @app.route('/etymology/<word>', methods=['GET'])
-@limiter.limit(f"{RATE_LIMIT} per minute")
-@cache.cached(timeout=TIMEOUT, key_prefix=lambda: f"etymology_{request.view_args['word'].lower()}")
+@limiter.limit(f"{RATE_LIMIT_PER_MIN} per minute")
+@cache.cached(timeout=CACHE_TTL, key_prefix=lambda: f"etymology_{request.view_args['word'].lower()}")
 def get_etymology(word):
     if not re.match(r'^[a-zA-Z\-]+$', word):
         return jsonify({'error': 'Invalid word'}), 400
@@ -112,4 +142,4 @@ def get_etymology(word):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
