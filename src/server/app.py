@@ -36,9 +36,14 @@ def scrape_etymology(word, base_word=None):
         original_word = base_word
         root = word
 
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    }
+
     url = f"https://www.etymonline.com/word/{word}"
     try:
-        response = requests.get(url)
+        session = requests.Session()
+        response = session.get(url, headers=headers)
         response.raise_for_status()
     except requests.HTTPError:
         response = None
@@ -61,7 +66,7 @@ def scrape_etymology(word, base_word=None):
     # reduce the word to the root if needed
     if not etymology:
         pos = simple_pos(word)
-        root = lemmatizer.lemmatize(word, pos=pos[0])
+        root = lemmatizer.lemmatize(word, pos=pos)
         if word != root:
             return scrape_etymology(root, base_word=word)
 

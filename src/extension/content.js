@@ -9,8 +9,12 @@ document.addEventListener('dblclick', async function(event) {
     if (word) {
         try {
             var etymologyData = await getEtymology(word);
-            const etymology = etymologyData?.etymology?.['first-attested-meaning'] || 'No etymology found';
-            displayEtymology(word, etymology);
+            var word = etymologyData?.etymology?.word || 'No word found';
+            var root = etymologyData?.etymology?.root || 'No root word found';
+            var wordType = etymologyData?.etymology?.word_type || 'No word type found';
+            var etymology = etymologyData?.etymology?.['first-attested-meaning'] || 'No etymology found';
+
+            displayEtymology(word, wordType, etymology);
         } catch (err) {
             console.error(err);
             displayEtymology(word, 'Error fetching etymology');
@@ -32,73 +36,205 @@ async function getEtymology(word) {
 }
 
 // create and display a panel to show the word and etymology (css styling for the extension box)
-function extensionPanel() {
-    // remove any existing panel first
-    const existingPanel = document.getElementById('extension-panel');
-    if (existingPanel) existingPanel.remove();
+function extensionPanel(wordText, wordType, etymologyText) {
+  const existingPanel = document.getElementById('extension-panel');
+  if (existingPanel) existingPanel.remove();
 
-    var panel = document.createElement('div');
-    panel.id = 'extension-panel';
-    panel.style.position = 'fixed';
-    panel.style.bottom = '15px';
-    panel.style.right = '15px';
-    panel.style.width = '300px'; 
-    panel.style.height = '200px';
-    panel.style.padding = '5px';
-    panel.style.backgroundColor = '#e9ecef';
-    panel.style.color = 'black';
-    panel.style.border = '2px solid black';
-    panel.style.borderColor = '#343a40';
-    panel.style.overflowY = 'scroll';  // make the panel scrollable
-    panel.style.zIndex = '10000'; // make the panel appear on top of everything
-    panel.style.boxSizing = 'border-box';
-    panel.style.borderRadius = '3%';
+  if (!document.getElementById('extension-panel-styles')) {
+    const style = document.createElement('style');
+    style.id = 'extension-panel-styles';
+    style.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500&display=swap');
 
-    var wordElement = document.createElement('p');
-    wordElement.id = 'word';
-    panel.appendChild(wordElement);
+      #extension-panel {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 280px;
+        height: 180px;
+        padding: 22px 22px 16px 22px;
+        background: rgba(255,255,255,0.98);
+        border: 1px solid rgba(255,255,255,0.98);
+        border-radius: 18px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255,255,255,0.98);
+        z-index: 10000;
+        box-sizing: border-box;
+        font-family: 'DM Sans', sans-serif;
+        animation: panelIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        transform-origin: bottom right;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
 
-    var etymologyElement = document.createElement('p');
-    etymologyElement.id = 'etymology';
-    panel.appendChild(etymologyElement);
+      @keyframes panelIn {
+        from { opacity: 0; transform: scale(0.88) translateY(8px); }
+        to   { opacity: 1; transform: scale(1) translateY(0); }
+      }
 
-    var exitButton = document.createElement('button');
-    exitButton.innerHTML = 'x';
-    exitButton.style.position = 'absolute';
-    exitButton.style.top = '5px';
-    exitButton.style.right = '5px';
-    exitButton.style.paddingRight = '7.5px';
-    exitButton.style.color = 'black';
-    exitButton.style.backgroundColor = 'transparent';
-    exitButton.onclick = function() {
-        document.body.removeChild(panel);
-    };
-    panel.appendChild(exitButton);
+      #extension-panel .ep-word-line {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 10px;
+        flex-shrink: 0;
+      }
 
-    document.body.appendChild(panel);
+      #extension-panel .ep-word {
+        font-family: 'Instrument Serif', serif;
+        font-size: 28px;
+        font-weight: 800;
+        color: #111;
+        letter-spacing: 0px;
+        line-height: 1;
+      }
 
-    // close panel if user clicks outside
+      #extension-panel .ep-word-type {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 11px;
+        font-weight: 500;
+        color: #999;
+        letter-spacing: 0.08em;
+        text-transform: lowercase;
+        background: rgba(0,0,0,0.05);
+        padding: 2px 7px;
+        border-radius: 99px;
+        align-self: center;
+      }
+
+      #extension-panel .ep-divider {
+        width: 28px;
+        height: 1.5px;
+        background: linear-gradient(90deg, #d4a8ff, #a8d4ff);
+        border-radius: 2px;
+        margin-bottom: 10px;
+        flex-shrink: 0;
+      }
+
+      #extension-panel .ep-scroll-area {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+        padding-right: 4px;
+        margin-right: -4px;
+      }
+
+      #extension-panel .ep-scroll-area::-webkit-scrollbar {
+        width: 3px;
+      }
+
+      #extension-panel .ep-scroll-area::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      #extension-panel .ep-scroll-area::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.15);
+        border-radius: 99px;
+      }
+
+      #extension-panel .ep-scroll-area::-webkit-scrollbar-thumb:hover {
+        background: rgba(0,0,0,0.28);
+      }
+
+      #extension-panel .ep-etymology {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 13px;
+        font-weight: 400;
+        color: #555;
+        line-height: 1.55;
+        margin: 0;
+        padding: 0 0 2px 0;
+      }
+
+      #extension-panel .ep-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 24px;
+        height: 24px;
+        border: none;
+        background: rgba(0,0,0,0.06);
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #888;
+        font-size: 13px;
+        line-height: 1;
+        transition: background 0.15s, color 0.15s;
+        padding: 0;
+        font-family: 'DM Sans', sans-serif;
+        flex-shrink: 0;
+        z-index: 1;
+      }
+
+      #extension-panel .ep-close:hover {
+        background: rgba(0,0,0,0.12);
+        color: #333;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const panel = document.createElement('div');
+  panel.id = 'extension-panel';
+
+  const wordLine = document.createElement('div');
+  wordLine.className = 'ep-word-line';
+
+  const wordEl = document.createElement('span');
+  wordEl.className = 'ep-word';
+  wordEl.id = 'word';
+  wordEl.textContent = wordText;
+
+  const typeEl = document.createElement('span');
+  typeEl.className = 'ep-word-type';
+  typeEl.id = 'word-type';
+  typeEl.textContent = wordType;
+
+  wordLine.appendChild(wordEl);
+  wordLine.appendChild(typeEl);
+
+  const divider = document.createElement('div');
+  divider.className = 'ep-divider';
+
+  const scrollArea = document.createElement('div');
+  scrollArea.className = 'ep-scroll-area';
+
+  const etymologyEl = document.createElement('p');
+  etymologyEl.className = 'ep-etymology';
+  etymologyEl.id = 'etymology';
+  etymologyEl.textContent = etymologyText;
+
+  scrollArea.appendChild(etymologyEl);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'ep-close';
+  closeBtn.innerHTML = '✕';
+  closeBtn.onclick = () => panel.remove();
+
+  panel.appendChild(closeBtn);
+  panel.appendChild(wordLine);
+  panel.appendChild(divider);
+  panel.appendChild(scrollArea);
+
+  document.body.appendChild(panel);
+
+  setTimeout(() => {
     function clickOutsideListener(e) {
-        if (!panel.contains(e.target)) {
-            panel.remove();
-            document.removeEventListener('click', clickOutsideListener);
-        }
+      if (!panel.contains(e.target)) {
+        panel.remove();
+        document.removeEventListener('click', clickOutsideListener);
+      }
     }
-
-    // add event listener after a tiny delay to avoid immediate self-close
-    setTimeout(() => {
-        document.addEventListener('click', clickOutsideListener);
-    }, 0);
+    document.addEventListener('click', clickOutsideListener);
+  }, 0);
 }
 
 // update the word and etymology within the floating panel
-function displayEtymology(word, etymology) {
+function displayEtymology(word, wordType, etymology) {
     if (!document.getElementById('extension-panel')) {
-        extensionPanel();
+        extensionPanel(word, wordType, etymology);
     }
-
-    word = word.charAt(0).toUpperCase() + word.slice(1); // capitalize the first letter of the word
-
-    document.getElementById('word').innerHTML = `<strong>Word:</strong> ${word}`;
-    document.getElementById('etymology').innerHTML = `<strong>Etymology:</strong> ${etymology}`;
 }
