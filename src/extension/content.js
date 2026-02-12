@@ -33,6 +33,10 @@ async function getEtymology(word) {
 
 // create and display a panel to show the word and etymology (css styling for the extension box)
 function extensionPanel() {
+    // remove any existing panel first
+    const existingPanel = document.getElementById('extension-panel');
+    if (existingPanel) existingPanel.remove();
+
     var panel = document.createElement('div');
     panel.id = 'extension-panel';
     panel.style.position = 'fixed';
@@ -72,6 +76,19 @@ function extensionPanel() {
     panel.appendChild(exitButton);
 
     document.body.appendChild(panel);
+
+    // close panel if user clicks outside
+    function clickOutsideListener(e) {
+        if (!panel.contains(e.target)) {
+            panel.remove();
+            document.removeEventListener('click', clickOutsideListener);
+        }
+    }
+
+    // add event listener after a tiny delay to avoid immediate self-close
+    setTimeout(() => {
+        document.addEventListener('click', clickOutsideListener);
+    }, 0);
 }
 
 // update the word and etymology within the floating panel

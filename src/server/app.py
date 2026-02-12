@@ -1,13 +1,28 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 from flask_cors import CORS
 import requests
 from bs4 import BeautifulSoup
+import nltk
+
+# download wordnet once
+nltk.download('wordnet')
+
 from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet
 
 app = Flask(__name__)
 CORS(app)
 
 lemmatizer = WordNetLemmatizer()
+
+# handle common comparatives and superlatives (needs to be more robust)
+def simple_pos(word):
+    if word.endswith("er") or word.endswith("est"):
+        return wordnet.ADJ
+    elif word.endswith("ing") or word.endswith("ed"):
+        return wordnet.VERB
+    else:
+        return wordnet.NOUN
 
 def scrape_etymology(word, base_word=None):
     # initialize values for output
@@ -45,7 +60,8 @@ def scrape_etymology(word, base_word=None):
 
     # reduce the word to the root if needed
     if not etymology:
-        root = lemmatizer.lemmatize(word)
+        pos = simple_pos(word)
+        root = lemmatizer.lemmatize(word, pos=pos[0])
         if word != root:
             return scrape_etymology(root, base_word=word)
 
@@ -67,10 +83,3 @@ def get_etymology(word):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-"""
-if __name__ == "__main__":
-    test_word = "twin"
-    result = scrape_etymology(test_word)
-    print(result)
-"""
