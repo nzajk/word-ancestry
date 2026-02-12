@@ -2,17 +2,17 @@
   "manifest_version": 3,
   "name": "WordAncestry",
   "version": "1.0",
-  "description": "Uncover the etymology of any word by simply highlighting it on a webpage.",
+  "description": "Uncover the etymologies of everyday words with ease.",
 
   "icons": {
-    "48": "icons/etymology.png"
+    "128": "icons/etymology.png"
   },
 
   "action": {
     "default_popup": "scripts/content.html",
     "default_title": "WordAncestry",
     "default_icon": {
-      "48": "icons/etymology.png"
+      "128": "icons/etymology.png"
     }
   },
 
