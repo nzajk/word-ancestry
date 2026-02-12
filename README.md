@@ -1,20 +1,44 @@
 # Word Ancestry
-This repository contains the code for the browser extension as well as the RESTful API. This extension is used to find the etymology of a word anywhere on the internet in an instant.
+
+**Word Ancestry** is a browser extension and RESTful API that lets you discover the etymology of any word on the internet instantly. Simply highlight a word, and the extension will show its origin and historical meaning.
+
+---
 
 ## Demonstration
-1. Highlight: Select any word you encounter.<br>
-   
-<img width="594" alt="Screenshot 2024-06-23 at 10 42 09 AM" src="https://github.com/nzajk/etymology-extension/assets/104289278/8e792440-9614-4403-bc3d-81077d23b61e">
 
-2. Discover: View the word’s etymology in a scrollable popup.<br>
+1. **Find a word** on any webpage.  
 
-<img width="1054" alt="Screenshot 2024-06-23 at 10 42 28 AM" src="https://github.com/nzajk/etymology-extension/assets/104289278/c84ba2f9-8e69-4fb7-ac9b-2d879df17fc5">
+   <img src="https://github.com/user-attachments/assets/e8f3fd50-64d8-4e17-b526-05ce0b83fca4" alt="Word selection example" width="500" style="border:1px solid #ddd; border-radius:5px;" />
 
-3. Dismiss: Close the popup when finished.<br>
+2. **Double-click the word** to trigger the extension.  
 
-<img width="72" alt="Screenshot 2024-06-23 at 10 49 08 AM" src="https://github.com/nzajk/etymology-extension/assets/104289278/d0f8047c-5c9b-4d19-9f7d-18cdd0403f46">
+   <img src="https://github.com/user-attachments/assets/c5000380-8cee-4e2d-8ce3-e13d27149f47" alt="Double click highlighted word" width="200" style="border:1px solid #ddd; border-radius:5px;" />
+
+3. **Read the etymology** in the pop-up window at the bottom-right corner.  
+
+   <img src="https://github.com/user-attachments/assets/38f2dbfa-dcf8-4c05-b708-25a57580afbe" alt="Etymology pop-up" width="400" style="border:1px solid #ddd; border-radius:5px;" />
+
+---
 
 ## Getting Started
-1. Clone the repository using `git clone https://github.com/nzajk/word-ancestry.git`.
-2. Run the command `python server/app.py` or `python3 server/app.py` depending on your python version.
-3. Add the extension to `chrome://extensions/` and enjoy!
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/nzajk/word-ancestry.git
+   ```
+   
+2. **Host the API**
+   ```
+   python src/api/app.py
+   # or
+   python3 src/api/app.py
+   ```
+
+3. **Load the Extension**
+   - Open `chrome://extensions/`.
+   - Enable Developer mode.
+   - Click Load unpacked and select the extension folder.
+  
+4. **Use it**
+   Double-click any word on a webpage to see its etymology instantly.
