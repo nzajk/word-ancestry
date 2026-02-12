@@ -1,14 +1,20 @@
 // this listener includes the main functionality for the web extension
-document.addEventListener('dblclick', async function() {
+document.addEventListener('dblclick', async function(event) {
     if (event.target.closest('#extension-panel') || event.target.closest('#popup-tab')) {
         return;
     }
 
-    var word = window.getSelection().toString().trim();
+    var word = window.getSelection().toString().trim().toLowerCase();
 
     if (word) {
-        var etymology = await getEtymology(word);
-        displayEtymology(word, etymology);
+        try {
+            var etymologyData = await getEtymology(word);
+            const etymology = etymologyData?.etymology?.['first-attested-meaning'] || 'No etymology found';
+            displayEtymology(word, etymology);
+        } catch (err) {
+            console.error(err);
+            displayEtymology(word, 'Error fetching etymology');
+        }
     };
 });
 
@@ -18,7 +24,8 @@ async function getEtymology(word) {
     var data = await response.json();
 
     if (response.ok) {
-        return data['etymology'][0];
+        console.log(data)
+        return data;
     } else {
         throw new Error('Error in fetching etymology');
     }

@@ -1,37 +1,57 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
-import re
 from bs4 import BeautifulSoup
+from nltk.stem import WordNetLemmatizer
 
 app = Flask(__name__)
 CORS(app)
 
-def scrape_etymology(word):
+lemmatizer = WordNetLemmatizer()
+
+def scrape_etymology(word, base_word=None):
     # initialize values for output
+    original_word = word
+    root = None
     clean_word_type = None
     etymology = None
 
+    # if word was reduced to the root update necessary fields
+    if base_word:
+        original_word = base_word
+        root = word
+
     url = f"https://www.etymonline.com/word/{word}"
-    response = requests.get(url)
-    response.raise_for_status()
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+    except requests.HTTPError:
+        response = None
 
-    soup = BeautifulSoup(response.text, "html.parser")
+    if response:
+        soup = BeautifulSoup(response.text, "html.parser")
 
-    # get header data for the lexical category (word type)
-    word_header = soup.find("h2", class_='scroll-m-16 text-2xl font-serif font-bold text-foreground text-4xl')
-    if word_header:
-        spans = word_header.find_all("span")
-        word_type = spans[1].get_text(" ", strip=True) if len(spans) >= 2 else None
-        clean_word_type = word_type.strip("()")
+        # get header data for the lexical category (word type)
+        word_header = soup.find("h2", class_='scroll-m-16 text-2xl font-serif font-bold text-foreground text-4xl')
+        if word_header:
+            spans = word_header.find_all("span")
+            word_type = spans[1].get_text(" ", strip=True) if len(spans) >= 2 else None
+            clean_word_type = word_type.strip("()")
 
-    # get the first attested meaning (etymology) of the word
-    etymology_divs = soup.find_all("div", class_="space-y-2 pb-2")
-    if len(etymology_divs) > 0:
-        etymology = etymology_divs[0].get_text(" ", strip=True)
+        # get the first attested meaning (etymology) of the word
+        etymology_divs = soup.find_all("div", class_="space-y-2 pb-2")
+        if len(etymology_divs) > 0:
+            etymology = etymology_divs[0].get_text(" ", strip=True)
+
+    # reduce the word to the root if needed
+    if not etymology:
+        root = lemmatizer.lemmatize(word)
+        if word != root:
+            return scrape_etymology(root, base_word=word)
 
     output = {
-        "word": word,
+        "word": original_word,
+        "root": root,
         "word_type": clean_word_type,
         "first-attested-meaning": etymology
     }
