@@ -41,4 +41,5 @@
    - Click Load unpacked and select the extension folder.
   
 4. **Use it**
+   
    Double-click any word on a webpage to see its etymology instantly.
