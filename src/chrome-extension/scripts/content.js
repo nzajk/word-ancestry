@@ -16,7 +16,6 @@ document.addEventListener('dblclick', async function(event) {
 
             displayEtymology(word, wordType, etymology);
         } catch (err) {
-            console.error(err);
             displayEtymology(word, 'Error fetching etymology');
         }
     };
@@ -94,7 +93,6 @@ function extensionPanel(wordText, wordType, etymologyText) {
         font-size: 11px;
         font-weight: 500;
         color: #999;
-        letter-spacing: 0.08em;
         text-transform: lowercase;
         background: rgba(0,0,0,0.05);
         padding: 2px 7px;

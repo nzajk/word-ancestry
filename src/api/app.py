@@ -1,18 +1,32 @@
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
+import re
 from bs4 import BeautifulSoup
 import nltk
 
-# download wordnet once
+# download wordnet once (move to requirements at some point)
 nltk.download('wordnet')
 
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_caching import Cache
 
+TTL=86400 # in seconds
+RATE_LIMIT=10 # per minute
+TIMEOUT=10 # in seconds
+
+# cors
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="*", supports_credentials=True)
 
+# handle rate limiting and browser caching
+limiter = Limiter(get_remote_address, app=app, default_limits=["100 per day", "10 per minute"])
+cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': TTL})
+
+# used to reduce words to their root if needed
 lemmatizer = WordNetLemmatizer()
 
 # handle common comparatives and superlatives (needs to be more robust)
@@ -43,7 +57,7 @@ def scrape_etymology(word, base_word=None):
     url = f"https://www.etymonline.com/word/{word}"
     try:
         session = requests.Session()
-        response = session.get(url, headers=headers)
+        response = session.get(url, headers=headers, timeout=TIMEOUT)
         response.raise_for_status()
     except requests.HTTPError:
         response = None
@@ -81,9 +95,20 @@ def scrape_etymology(word, base_word=None):
 
 
 @app.route('/etymology/<word>', methods=['GET'])
+@limiter.limit(f"{RATE_LIMIT} per minute")
+@cache.cached(timeout=TIMEOUT, key_prefix=lambda: f"etymology_{request.view_args['word'].lower()}")
 def get_etymology(word):
-    etymology = scrape_etymology(word)
-    return jsonify({'etymology': etymology}), 200
+    if not re.match(r'^[a-zA-Z\-]+$', word):
+        return jsonify({'error': 'Invalid word'}), 400
+    
+    try:
+        etymology = scrape_etymology(word)
+        if not etymology.get('first-attested-meaning'):
+            return jsonify({'error': 'Etymology not found'}), 404
+        return jsonify({'etymology': etymology}), 200
+    except Exception as e:
+        app.logger.error(f"Error for word '{word}': {e}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 if __name__ == '__main__':
