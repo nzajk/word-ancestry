@@ -1,28 +1,35 @@
 {
-    "manifest_version": 3,
-    "name": "WordAncestry",
-    "version": "1.0",
-  
-    "description": "Uncover the etymology of any word by simply highlighting it on a webpage.",
+  "manifest_version": 3,
+  "name": "WordAncestry",
+  "version": "1.0",
+  "description": "Uncover the etymology of any word by simply highlighting it on a webpage.",
 
-    "action": {
-        "default_popup": "content.html",
-        "default_title": "WordAncestry"
-    },
+  "icons": {
+    "48": "icons/etymology.png"
+  },
 
-    "permissions": [
-      "activeTab",
-      "scripting"
-    ],
-    
-    "host_permissions": [
-      "http://*/*"
-    ],
-    
-    "content_scripts": [
-      {
-        "matches": ["https://*/*"],
-        "js": ["content.js"]
-      }
-    ]
-  }
+  "action": {
+    "default_popup": "scripts/content.html",
+    "default_title": "WordAncestry",
+    "default_icon": {
+      "48": "icons/etymology.png"
+    }
+  },
+
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": ["https://*/*"],
+      "js": ["scripts/content.js"]
+    }
+  ]
+}
