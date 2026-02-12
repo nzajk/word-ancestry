@@ -14,10 +14,6 @@
       "activeTab",
       "scripting"
     ],
-  
-    "icons": {
-      "48": "roots.png"
-    },
     
     "host_permissions": [
       "http://*/*"
