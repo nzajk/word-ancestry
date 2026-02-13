@@ -21,9 +21,9 @@ document.addEventListener('dblclick', async function(event) {
     };
 });
 
-// the API call for the etymology
+// the api call for the etymology
 async function getEtymology(word) {
-    var response = await fetch(`http://127.0.0.1:5000/etymology/${word}`);
+    var response = await fetch(`https://word-ancestry-service.onrender.com/etymology/${word}`);
     var data = await response.json();
 
     if (response.ok) {
