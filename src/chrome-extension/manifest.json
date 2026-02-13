@@ -1,34 +1,33 @@
 {
   "manifest_version": 3,
-  "name": "WordAncestry",
+  "name": "Word Ancestry",
   "version": "1.0",
   "description": "Uncover the etymologies of everyday words with ease.",
-
   "icons": {
     "128": "icons/etymology.png"
   },
-
   "action": {
-    "default_popup": "scripts/content.html",
-    "default_title": "WordAncestry",
+    "default_popup": "popup/index.html",
+    "default_title": "Word Ancestry",
     "default_icon": {
       "128": "icons/etymology.png"
     }
   },
-
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
-
   "host_permissions": [
     "http://*/*",
     "https://*/*"
   ],
-
   "content_scripts": [
     {
-      "matches": ["https://*/*"],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
       "js": ["scripts/content.js"]
     }
   ]

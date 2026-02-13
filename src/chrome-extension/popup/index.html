@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Word Ancestry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+  <div class="header">
+    <div class="brand">
+      <span class="brand-name">Word Ancestry</span>
+      <span class="brand-sub">double-click any word to explore</span>
+    </div>
+    <div class="toggle-wrap">
+      <span class="toggle-label" id="toggle-label">off</span>
+      <label class="toggle" aria-label="Enable extension">
+        <input type="checkbox" id="main-toggle" />
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot" id="status-dot"></div>
+    <span class="status-text" id="status-text">extension paused on this tab</span>
+  </div>
+
+  <div class="content-area" id="content-area">
+    <div class="section">
+      <div class="section-label">Recent words</div>
+      <div class="word-list" id="word-list"></div>
+    </div>
+    <div class="accent-divider" id="accent-divider" style="display:none"></div>
+    <div class="footer">
+      <button class="clear-btn" id="clear-btn">clear history</button>
+      <span class="word-count" id="word-count"></span>
+    </div>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+</html>

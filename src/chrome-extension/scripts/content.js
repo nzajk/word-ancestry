@@ -1,5 +1,39 @@
+// listen for toggle changes from the popup in real time 
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.enabled) {
+    enabled = changes.enabled.newValue;
+  }
+});
+
+// track the enabled state
+let enabled = false;
+
+chrome.storage.local.get('enabled', (result) => {
+  enabled = result.enabled || false;
+});
+
+// save a word to history
+function saveToHistory(word, wordType, etymology) {
+  chrome.storage.local.get('history', (result) => {
+    const history = result.history || [];
+    const newEntry = {
+      word,
+      type: wordType,
+      preview: etymology,
+      savedAt: Date.now(),  // real timestamp so popup can show accurate relative time
+    };
+    // skip if the same word was just looked up
+    if (history.length > 0 && history[0].word === word) return;
+    const updated = [newEntry, ...history].slice(0, 5);
+    chrome.storage.local.set({ history: updated });
+  });
+}
+
 // this listener includes the main functionality for the web extension
 document.addEventListener('dblclick', async function(event) {
+    // if toggled off do nothing
+    if (!enabled) return;
+
     if (event.target.closest('#extension-panel') || event.target.closest('#popup-tab')) {
         return;
     }
@@ -13,6 +47,8 @@ document.addEventListener('dblclick', async function(event) {
             var root = etymologyData?.etymology?.root || null;
             var wordType = etymologyData?.etymology?.word_type || 'No word type found';
             var etymology = etymologyData?.etymology?.['first-attested-meaning'] || 'No etymology found';
+
+            saveToHistory(word, wordType, etymology)
 
             displayEtymology(word, wordType, etymology, root);
         } catch (err) {
