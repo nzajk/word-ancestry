@@ -2,8 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
 import re
+import os
 from bs4 import BeautifulSoup
-import nltk
 from collections import Counter
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
@@ -12,16 +12,16 @@ from flask_limiter.util import get_remote_address
 from flask_caching import Cache
 
 # constants
-CACHE_TTL = 86400               # 24h, used for @cache.cached timeout
-HTTP_TIMEOUT = 10               # seconds, used for requests.get timeout
-RATE_LIMIT_PER_MIN = 10         # requests per minute
-RATE_LIMIT_PER_DAY = 100        # requests per minute
-MAX_LEMMA_DEPTH = 3             # max recursion depth for lemmatization fallback
+CACHE_TTL = int(os.getenv("CACHE_TTL"))
+HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT"))
+RATE_LIMIT_PER_MIN = int(os.getenv("RATE_LIMIT_PER_MIN"))
+RATE_LIMIT_PER_DAY = int(os.getenv("RATE_LIMIT_PER_DAY"))
+MAX_LEMMA_DEPTH = int(os.getenv("MAX_LEMMA_DEPTH"))
 
 # app setup
 app = Flask(__name__)
 
-# TODO: restrict CORS to your actual frontend origin(s) in prod
+# TODO: restrict CORS to your actual frontend origin(s) (chrome extension) in prod
 CORS(app, origins="*", supports_credentials=True)
 
 # handle rate limiting
