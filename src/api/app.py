@@ -4,6 +4,7 @@ import requests
 import re
 from bs4 import BeautifulSoup
 import nltk
+from collections import Counter
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 from flask_limiter import Limiter
@@ -44,13 +45,13 @@ lemmatizer = WordNetLemmatizer()
 
 
 def simple_pos(word):
-    """rough POS guess for lemmatization fallback."""
-    if word.endswith("er") or word.endswith("est"):
-        return wordnet.ADJ
-    elif word.endswith("ing") or word.endswith("ed"):
-        return wordnet.VERB
-    else:
-        return wordnet.NOUN
+    """ classifies the lexical category for the given word """
+    synsets = wordnet.synsets(word)
+    if not synsets:
+        return wordnet.NOUN  # default fallback
+    
+    pos_counts = Counter(s.pos() for s in synsets)
+    return pos_counts.most_common(1)[0][0]
 
 
 def scrape_etymology(word, base_word=None, _depth=0):
