@@ -10,13 +10,18 @@ document.addEventListener('dblclick', async function(event) {
         try {
             var etymologyData = await getEtymology(word);
             var word = etymologyData?.etymology?.word || 'No word found';
-            var root = etymologyData?.etymology?.root || 'No root word found';
+            var root = etymologyData?.etymology?.root || null;
             var wordType = etymologyData?.etymology?.word_type || 'No word type found';
             var etymology = etymologyData?.etymology?.['first-attested-meaning'] || 'No etymology found';
 
-            displayEtymology(word, wordType, etymology);
+            displayEtymology(word, wordType, etymology, root);
         } catch (err) {
-            displayEtymology(word, 'Error fetching etymology');
+            if (err?.status === 429) {
+                displayEtymology(word, '-', 'You are being rate limited. Try again later.');
+            } else {
+                console.log(err)
+                displayEtymology(word, 'Error fetching etymology');
+            }
         }
     };
 });
@@ -24,18 +29,18 @@ document.addEventListener('dblclick', async function(event) {
 // the api call for the etymology
 async function getEtymology(word) {
     var response = await fetch(`https://word-ancestry-service.onrender.com/etymology/${word}`);
-    var data = await response.json();
 
-    if (response.ok) {
-        console.log(data)
-        return data;
-    } else {
-        throw new Error('Error in fetching etymology');
+    if (!response.ok) {
+        const error = new Error('Error in fetching etymology');
+        error.status = response.status;
+        throw error;
     }
+    
+    return await response.json();
 }
 
 // create and display a panel to show the word and etymology (css styling for the extension box)
-function extensionPanel(wordText, wordType, etymologyText) {
+function extensionPanel(wordText, wordType, etymologyText, rootText) {
   const existingPanel = document.getElementById('extension-panel');
   if (existingPanel) existingPanel.remove();
 
@@ -107,6 +112,20 @@ function extensionPanel(wordText, wordType, etymologyText) {
         border-radius: 2px;
         margin-bottom: 10px;
         flex-shrink: 0;
+      }
+
+      #extension-panel .ep-root {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 11px;
+        font-weight: 500;
+        color: #777;
+        margin-bottom: 8px;
+        opacity: 0.9;
+      }
+
+      #extension-panel .ep-root::before {
+        content: "↳ ";
+        color: #bbb;
       }
 
       #extension-panel .ep-scroll-area {
@@ -211,10 +230,15 @@ function extensionPanel(wordText, wordType, etymologyText) {
   closeBtn.className = 'ep-close';
   closeBtn.innerHTML = '✕';
   closeBtn.onclick = () => panel.remove();
-
   panel.appendChild(closeBtn);
   panel.appendChild(wordLine);
   panel.appendChild(divider);
+  if (rootText) {
+    const rootEl = document.createElement('div');
+    rootEl.className = 'ep-root';
+    rootEl.textContent = `from ${rootText}`;
+    panel.appendChild(rootEl);
+  }
   panel.appendChild(scrollArea);
 
   document.body.appendChild(panel);
@@ -231,8 +255,8 @@ function extensionPanel(wordText, wordType, etymologyText) {
 }
 
 // update the word and etymology within the floating panel
-function displayEtymology(word, wordType, etymology) {
+function displayEtymology(word, wordType, etymology, root) {
     if (!document.getElementById('extension-panel')) {
-        extensionPanel(word, wordType, etymology);
+        extensionPanel(word, wordType, etymology, root);
     }
 }
