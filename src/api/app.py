@@ -84,11 +84,20 @@ def scrape_etymology(word, base_word=None, _depth=0):
     }
 
     url = f"https://www.etymonline.com/word/{word}"
+    app.logger.info("Fetching etymology: url=%r", url)
+
     try:
         session = requests.Session()
         response = session.get(url, headers=headers, timeout=HTTP_TIMEOUT)
         response.raise_for_status()
-    except requests.HTTPError:
+    except requests.HTTPError as e:
+        app.logger.warning("HTTP error fetching word=%r: %s", word, e)
+        response = None
+    except requests.Timeout:
+        app.logger.error("Request timed out after %ds for word=%r", HTTP_TIMEOUT, word)
+        response = None
+    except requests.RequestException as e:
+        app.logger.error("Request failed for word=%r: %s", word, e)
         response = None
 
     if response:
@@ -100,19 +109,29 @@ def scrape_etymology(word, base_word=None, _depth=0):
             spans = word_header.find_all("span")
             word_type = spans[1].get_text(" ", strip=True) if len(spans) >= 2 else None
             clean_word_type = word_type.strip("()")
+            app.logger.debug("Parsed word_type=%r for word=%r", clean_word_type, word)
+        else:
+            app.logger.debug("No word header found for word=%r", word)
+
 
         # get the first attested meaning (etymology) of the word
         etymology_divs = soup.find_all("div", class_="space-y-2 pb-2")
         if len(etymology_divs) > 0:
             etymology = etymology_divs[0].get_text(" ", strip=True)
+            app.logger.debug("Found etymology for word=%r (length=%d chars)", word, len(etymology))
+        else:
+            app.logger.debug("No etymology div found for word=%r", word)
 
     # reduce the word to the root if needed
     if not etymology:
         pos = simple_pos(word)
         root = lemmatizer.lemmatize(word, pos=pos)
+        app.logger.info("No etymology found for word=%r; lemmatized to root=%r (pos=%r, depth=%d)", word, root, pos, _depth)
 
         if word != root:
             return scrape_etymology(root, base_word=word, _depth=_depth + 1)
+        else:
+            app.logger.info("Lemmatization produced no change for word=%r; giving up", word)
 
     output = {
         "word": original_word,
@@ -128,13 +147,18 @@ def scrape_etymology(word, base_word=None, _depth=0):
 @limiter.limit(f"{RATE_LIMIT_PER_MIN} per minute")
 @cache.cached(timeout=CACHE_TTL, key_prefix=lambda: f"etymology_{request.view_args['word'].lower()}")
 def get_etymology(word):
+    app.logger.info("Request received: word=%r, remote_addr=%s", word, request.remote_addr)
+
     if not re.match(r'^[a-zA-Z\-]+$', word):
         return jsonify({'error': 'Invalid word'}), 400
     
     try:
         etymology = scrape_etymology(word)
         if not etymology.get('first-attested-meaning'):
+            app.logger.info("Etymology not found: word=%r", word)
             return jsonify({'error': 'Etymology not found'}), 404
+        
+        app.logger.info("Etymology returned successfully: word=%r, root=%r", word, etymology.get('root'))
         return jsonify({'etymology': etymology}), 200
     except Exception as e:
         app.logger.error(f"Error for word '{word}': {e}")
