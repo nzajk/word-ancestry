@@ -23,7 +23,7 @@ function renderHistory(history) {
   if (!history || history.length === 0) {
     wordList.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">æ</div>
+        <div class="empty-icon">∅</div>
         <div class="empty-text">Double-click any word on the page<br>to explore its origins.</div>
       </div>`;
     accentDiv.style.display = 'none';

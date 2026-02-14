@@ -21,8 +21,7 @@ MAX_LEMMA_DEPTH = int(os.getenv("MAX_LEMMA_DEPTH"))
 # app setup
 app = Flask(__name__)
 
-# TODO: restrict CORS to your actual frontend origin(s) (chrome extension) in prod
-CORS(app, origins="*", supports_credentials=True)
+CORS(app, origins="chrome-extension://biclbjjjfcjfonecmojpeikjfcaolboa", supports_credentials=True)
 
 # handle rate limiting
 limiter = Limiter(
