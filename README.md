@@ -12,7 +12,7 @@ This extension has implemented the following key features.
 ## Demonstration
 To learn how the extension works, you can watch the video below.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/JVwncdCThkw?si=uFb91H2EvTmk6cGM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![Word Ancestry Demo](https://img.youtube.com/vi/JVwncdCThkw/0.jpg)](https://www.youtube.com/watch?v=JVwncdCThkw)
 
 ## Installation
 Currently, the published Chrome extension is in testing so to self-host simply do the following.
