@@ -28,12 +28,12 @@ Currently, the published Chrome extension is in testing so to self-host simply d
    python src/api/app.py
    ```
 
-3. **Load the Extension**
+3. **Load the extension**
    - Open `chrome://extensions/`.
    - Enable Developer mode.
-   - Click Load unpacked and select the extension folder.
+   - Click Load unpacked and select the `chrome-extension` folder.
   
-4. **Have Fun Learning!**
+4. **Have fun learning!**
 
 ## Architecture
 The API for this project scrapes etymology data from `etymonline.com`, exposes it through a RESTful interface, and is consumed by content.js to display relevant word history directly within the browser.
